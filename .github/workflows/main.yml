@@ -20,17 +20,6 @@ jobs:
           submodules: "recursive"
           fetch-depth: 0
 
-      - name: Write key
-        if: ${{ ( github.event_name != 'pull_request' && github.ref == 'refs/heads/master' ) || github.ref_type == 'tag' }}
-        run: |
-          if [ ! -z "${{ secrets.KEY_STORE }}" ]; then
-            echo storePassword='${{ secrets.KEY_STORE_PASSWORD }}' >> keystore.properties
-            echo keyAlias='${{ secrets.ALIAS }}' >> keystore.properties
-            echo keyPassword='${{ secrets.KEY_PASSWORD }}' >> keystore.properties
-            echo storeFile=$PWD/'key.jks' >> keystore.properties
-            echo '${{ secrets.KEY_STORE }}' | base64 --decode > key.jks
-          fi
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
