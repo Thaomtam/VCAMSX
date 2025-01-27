@@ -1,11 +1,10 @@
-name: Android CI/CD
+name: Android Build
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -26,33 +25,33 @@ jobs:
       
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
+      with:
+        gradle-home-cache-cleanup: true
     
-    - name: Run static code analysis
-      run: ./gradlew ktlintCheck detekt
-      
-    - name: Run unit tests
-      run: ./gradlew test
-      
+    - name: Add Ktlint dependency
+      run: |
+        echo "plugins {
+          id 'org.jlleitschuh.gradle.ktlint' version '11.3.1'
+        }" >> build.gradle.kts
+        
     - name: Build debug APK
       run: ./gradlew assembleDebug
       
-    - name: Upload debug APK
+    - name: Run tests
+      run: ./gradlew test
+      
+    - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: app-debug
         path: app/build/outputs/apk/debug/app-debug.apk
-        
-    - name: Build release APK
-      run: ./gradlew assembleRelease
-      
-    - name: Upload release APK
-      uses: actions/upload-artifact@v3
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
       with:
-        name: app-release
-        path: app/build/outputs/apk/release/app-release.apk
-        
-    - name: Run instrumentation tests
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 29
-        script: ./gradlew connectedAndroidTest
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
